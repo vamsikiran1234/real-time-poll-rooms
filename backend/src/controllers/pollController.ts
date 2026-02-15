@@ -33,7 +33,7 @@ export const createPoll = async (req: Request, res: Response): Promise<void> => 
       totalVotes: 0
     });
 
-    const shareableLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/poll/${poll._id}`;
+    const shareableLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/poll/${poll._id}`;
 
     res.status(201).json({
       pollId: poll._id,

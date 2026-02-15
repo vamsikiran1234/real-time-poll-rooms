@@ -3,6 +3,14 @@ import { useParams } from 'react-router-dom';
 import { pollService } from '../services/api';
 import type { Poll } from '../types/poll';
 import { generateFingerprint, getStoredVote, storeVote } from '../utils/fingerprint';
+import { 
+  connectSocket, 
+  disconnectSocket, 
+  joinPollRoom, 
+  leavePollRoom, 
+  onPollUpdate, 
+  offPollUpdate 
+} from '../services/socketService';
 import './PollView.css';
 
 export default function PollView() {
@@ -26,6 +34,28 @@ export default function PollView() {
     }
 
     fetchPoll();
+  }, [pollId]);
+
+  // Socket.io real-time updates
+  useEffect(() => {
+    if (!pollId) return;
+
+    // Connect to socket and join poll room
+    const socket = connectSocket();
+    joinPollRoom(pollId);
+
+    // Listen for real-time poll updates
+    onPollUpdate((updatedPoll: Poll) => {
+      console.log('📊 Poll updated in real-time:', updatedPoll);
+      setPoll(updatedPoll);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      leavePollRoom(pollId);
+      offPollUpdate();
+      disconnectSocket();
+    };
   }, [pollId]);
 
   const fetchPoll = async () => {
