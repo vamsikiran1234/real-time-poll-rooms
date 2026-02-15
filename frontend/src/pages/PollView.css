@@ -112,6 +112,56 @@
   border-radius: 8px;
   text-align: center;
   font-size: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.vote-btn {
+  margin-top: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(90deg, #646cff 0%, #535bf2 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vote-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.4);
+}
+
+.vote-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.option-item.voted {
+  background: rgba(100, 108, 255, 0.15);
+  border-color: rgba(100, 108, 255, 0.4);
+}
+
+.option-item.disabled {
+  opacity: 0.85;
+}
+
+.check-mark {
+  color: #646cff;
+  font-weight: bold;
+  margin-left: 0.5rem;
+}
+
+.voted-badge {
+  margin-left: 1rem;
+  padding: 0.25rem 0.75rem;
+  background: rgba(100, 108, 255, 0.2);
+  color: #646cff;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 @media (prefers-color-scheme: light) {
@@ -128,6 +178,11 @@
   .option-item:hover {
     background: #e9ecef;
     border-color: #ced4da;
+  }
+
+  .option-item.voted {
+    background: rgba(100, 108, 255, 0.1);
+    border-color: #646cff;
   }
 
   .progress-bar {
