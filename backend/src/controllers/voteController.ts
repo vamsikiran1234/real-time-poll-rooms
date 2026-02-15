@@ -43,6 +43,16 @@ export const submitVote = async (req: Request, res: Response): Promise<void> => 
       || req.socket.remoteAddress 
       || 'unknown';
 
+    const existingVoteByIp = await Vote.findOne({
+      pollId,
+      voterIp
+    });
+
+    if (existingVoteByIp) {
+      res.status(403).json({ error: 'You have already voted in this poll' });
+      return;
+    }
+
     await Vote.create({
       pollId,
       optionId,
