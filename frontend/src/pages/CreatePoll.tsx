@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { pollService } from '../services/api';
 import './CreatePoll.css';
 
 export default function CreatePoll() {
+  const navigate = useNavigate();
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [shareableLink, setShareableLink] = useState('');
+  const [pollId, setPollId] = useState('');
 
   const addOption = () => {
     setOptions([...options, '']);
@@ -58,6 +61,7 @@ export default function CreatePoll() {
       });
 
       setShareableLink(response.shareableLink);
+      setPollId(response.pollId);
       setQuestion('');
       setOptions(['', '']);
     } catch (err: any) {
@@ -81,6 +85,12 @@ export default function CreatePoll() {
               Copy
             </button>
           </div>
+          <button 
+            onClick={() => navigate(`/poll/${pollId}`)}
+            className="view-poll-btn"
+          >
+            View Poll
+          </button>
         </div>
       )}
 
