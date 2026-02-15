@@ -65,7 +65,18 @@ export default function PollView() {
       const data = await pollService.getPollById(pollId!);
       setPoll(data);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to load poll');
+      const status = err.response?.status;
+      let errorMessage = 'Failed to load poll. Please try again later.';
+      
+      if (status === 404) {
+        errorMessage = '❌ Poll not found. This poll may not exist or has been deleted.';
+      } else if (!navigator.onLine) {
+        errorMessage = '🌐 No internet connection. Please check your network.';
+      } else if (err.response?.data?.error) {
+        errorMessage = `⚠️ ${err.response.data.error}`;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -88,7 +99,25 @@ export default function PollView() {
       setVotedOptionId(optionId);
       storeVote(pollId, optionId);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 'Failed to submit vote';
+      const status = err.response?.status;
+      const serverError = err.response?.data?.error;
+      
+      let errorMessage = 'Failed to submit vote. Please try again.';
+      
+      if (status === 403) {
+        errorMessage = '🚫 You have already voted on this poll. Each person can only vote once.';
+      } else if (status === 429) {
+        errorMessage = '⏱️ Please wait before voting again. There is a cooldown period between votes.';
+      } else if (status === 404) {
+        errorMessage = '❌ Poll not found. It may have been deleted.';
+      } else if (status === 400) {
+        errorMessage = '⚠️ Invalid vote. Please refresh the page and try again.';
+      } else if (serverError) {
+        errorMessage = `⚠️ ${serverError}`;
+      } else if (!navigator.onLine) {
+        errorMessage = '🌐 No internet connection. Please check your network and try again.';
+      }
+      
       setError(errorMessage);
     } finally {
       setVoting(false);
@@ -103,15 +132,23 @@ export default function PollView() {
   if (loading) {
     return (
       <div className="poll-view-container">
-        <div className="loading">Loading poll...</div>
+        <div className="loading">
+          <div className="spinner"></div>
+          <p>Loading poll...</p>
+        </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error && !poll) {
     return (
       <div className="poll-view-container">
-        <div className="error-message">{error}</div>
+        <div className="error-container">
+          <div className="error-message">{error}</div>
+          <button onClick={fetchPoll} className="retry-btn">
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -119,7 +156,9 @@ export default function PollView() {
   if (!poll) {
     return (
       <div className="poll-view-container">
-        <div className="error-message">Poll not found</div>
+        <div className="error-container">
+          <div className="error-message">❌ Poll not found</div>
+        </div>
       </div>
     );
   }
@@ -130,40 +169,64 @@ export default function PollView() {
         <h1 className="poll-question">{poll.question}</h1>
 
         <div className="poll-stats">
-          <span className="total-votes">
-            {poll.totalVotes} {poll.totalVotes === 1 ? 'vote' : 'votes'}
-          </span>
+          <div className="total-votes-container">
+            <span className="vote-count-number">{poll.totalVotes}</span>
+            <span className="vote-count-label">
+              {poll.totalVotes === 1 ? 'Vote' : 'Votes'}
+            </span>
+          </div>
           {votedOptionId && (
-            <span className="voted-badge">You voted</span>
+            <span className="voted-badge">✓ You voted</span>
           )}
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="inline-error-message">
+            {error}
+            <button 
+              onClick={() => setError('')} 
+              className="dismiss-error"
+              aria-label="Dismiss error"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         <div className="options-list">
-          {poll.options.map((option) => {
+          {poll.options.map((option, index) => {
             const percentage = calculatePercentage(option.voteCount);
             const isVoted = votedOptionId === option._id;
+            const isLeading = poll.totalVotes > 0 && option.voteCount === Math.max(...poll.options.map(o => o.voteCount));
             
             return (
               <div 
                 key={option._id} 
-                className={`option-item ${isVoted ? 'voted' : ''} ${votedOptionId ? 'disabled' : ''}`}
+                className={`option-item ${isVoted ? 'voted' : ''} ${votedOptionId ? 'disabled' : ''} ${isLeading && poll.totalVotes > 0 ? 'leading' : ''}`}
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="option-header">
                   <span className="option-text">
                     {option.text}
                     {isVoted && <span className="check-mark"> ✓</span>}
+                    {isLeading && poll.totalVotes > 0 && !isVoted && (
+                      <span className="leading-badge"> 🏆</span>
+                    )}
                   </span>
                   <span className="option-stats">
-                    {option.voteCount} ({percentage}%)
+                    <span className="vote-count">{option.voteCount}</span>
+                    <span className="percentage">{percentage}%</span>
                   </span>
                 </div>
                 <div className="progress-bar">
                   <div 
-                    className="progress-fill" 
+                    className={`progress-fill ${isLeading ? 'leading-fill' : ''}`}
                     style={{ width: `${percentage}%` }}
-                  />
+                  >
+                    {percentage > 10 && (
+                      <span className="progress-percentage">{percentage}%</span>
+                    )}
+                  </div>
                 </div>
                 {!votedOptionId && (
                   <button
@@ -171,7 +234,7 @@ export default function PollView() {
                     disabled={voting}
                     className="vote-btn"
                   >
-                    {voting ? 'Voting...' : 'Vote'}
+                    {voting ? '⏳ Voting...' : '👍 Vote'}
                   </button>
                 )}
               </div>
@@ -181,7 +244,11 @@ export default function PollView() {
 
         <div className="poll-footer">
           <p className="poll-date">
-            Created {new Date(poll.createdAt).toLocaleDateString()}
+            📅 Created {new Date(poll.createdAt).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
           </p>
         </div>
       </div>
