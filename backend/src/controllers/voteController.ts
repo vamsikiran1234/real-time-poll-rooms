@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Poll from '../models/Poll';
 import Vote from '../models/Vote';
 import { VOTE_COOLDOWN_SECONDS } from '../utils/constants';
+import { io } from '../index';
 
 export const submitVote = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -96,6 +97,8 @@ export const submitVote = async (req: Request, res: Response): Promise<void> => 
       },
       { new: true }
     );
+
+    io.to(`poll:${pollId}`).emit('pollUpdate', updatedPoll);
 
     res.json({
       message: 'Vote submitted successfully',
