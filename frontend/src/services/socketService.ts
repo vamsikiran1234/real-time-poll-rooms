@@ -1,6 +1,10 @@
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+if (!import.meta.env.VITE_API_URL) {
+  console.warn('⚠️ VITE_API_URL not set for Socket.io, using fallback:', SOCKET_URL);
+}
 
 let socket: Socket | null = null;
 

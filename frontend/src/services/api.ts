@@ -1,7 +1,11 @@
 import axios, { AxiosError } from "axios";
 import type { CreatePollRequest, CreatePollResponse, Poll, VoteRequest, VoteResponse } from "../types/poll";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+if (!import.meta.env.VITE_API_URL) {
+  console.warn('⚠️ VITE_API_URL not set, using fallback:', API_BASE_URL);
+}
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
