@@ -30,13 +30,44 @@ export default function CreatePoll() {
   };
 
   const validateForm = (): string | null => {
-    if (!question.trim()) {
-      return 'Question is required';
+    // Validate question
+    if (!question || !question.trim()) {
+      return '⚠️ Question is required and cannot be empty';
     }
 
+    if (question.trim().length < 5) {
+      return '⚠️ Question must be at least 5 characters long';
+    }
+
+    if (question.trim().length > 500) {
+      return '⚠️ Question is too long (max 500 characters)';
+    }
+
+    // Validate options
     const validOptions = options.filter(opt => opt.trim().length > 0);
+    
     if (validOptions.length < 2) {
-      return 'At least 2 non-empty options are required';
+      return '⚠️ At least 2 non-empty options are required';
+    }
+
+    if (validOptions.length > 10) {
+      return '⚠️ Maximum 10 options allowed';
+    }
+
+    // Check for duplicate options
+    const uniqueOptions = new Set(validOptions.map(opt => opt.trim().toLowerCase()));
+    if (uniqueOptions.size !== validOptions.length) {
+      return '⚠️ Duplicate options are not allowed';
+    }
+
+    // Check individual option length
+    for (const option of validOptions) {
+      if (option.trim().length < 1) {
+        return '⚠️ Options cannot be empty';
+      }
+      if (option.trim().length > 200) {
+        return '⚠️ Option text is too long (max 200 characters)';
+      }
     }
 
     return null;
@@ -57,7 +88,7 @@ export default function CreatePoll() {
       setLoading(true);
       const response = await pollService.createPoll({
         question: question.trim(),
-        options: options.filter(opt => opt.trim().length > 0)
+        options: options.filter(opt => opt.trim().length > 0).map(opt => opt.trim())
       });
 
       setShareableLink(response.shareableLink);
@@ -65,7 +96,26 @@ export default function CreatePoll() {
       setQuestion('');
       setOptions(['', '']);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create poll');
+      const status = err.response?.status;
+      let errorMessage = '⚠️ Failed to create poll. Please try again.';
+
+      if (!navigator.onLine) {
+        errorMessage = '🌐 No internet connection. Please check your network and try again.';
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = '⏱️ Request timeout. The server took too long to respond. Please try again.';
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMessage = '🌐 Network error. Unable to reach the server. Please check your connection.';
+      } else if (status === 400) {
+        errorMessage = `⚠️ ${err.response?.data?.error || 'Invalid poll data'}`;
+      } else if (status === 500) {
+        errorMessage = '❌ Server error. Please try again later.';
+      } else if (err.response?.data?.error) {
+        errorMessage = `⚠️ ${err.response.data.error}`;
+      } else if (err.message) {
+        errorMessage = `⚠️ ${err.message}`;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

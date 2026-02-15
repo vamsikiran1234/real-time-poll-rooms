@@ -11,6 +11,7 @@ import {
   onPollUpdate, 
   offPollUpdate 
 } from '../services/socketService';
+import ConnectionStatus from '../components/ConnectionStatus';
 import './PollView.css';
 
 export default function PollView() {
@@ -165,6 +166,7 @@ export default function PollView() {
 
   return (
     <div className="poll-view-container">
+      <ConnectionStatus />
       <div className="poll-card">
         <h1 className="poll-question">{poll.question}</h1>
 
