@@ -12,20 +12,16 @@ dotenv.config();
 const app: Express = express();
 const httpServer = createServer(app);
 
-// CORS configuration for production
-const corsOptions = {
-  origin: process.env.FRONTEND_URL || '*',
-  methods: ['GET', 'POST'],
-  credentials: true
-};
-
 const io = new Server(httpServer, {
-  cors: corsOptions
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
 });
 
 const PORT = process.env.PORT || 5000;
 
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 
 app.use('/api/polls', pollRoutes);
