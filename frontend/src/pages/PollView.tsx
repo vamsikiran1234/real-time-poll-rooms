@@ -42,7 +42,7 @@ export default function PollView() {
     if (!pollId) return;
 
     // Connect to socket and join poll room
-    const socket = connectSocket();
+    connectSocket();
     joinPollRoom(pollId);
 
     // Listen for real-time poll updates
