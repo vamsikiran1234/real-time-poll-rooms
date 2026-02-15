@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Poll from '../models/Poll';
 import Vote from '../models/Vote';
+import { VOTE_COOLDOWN_SECONDS } from '../utils/constants';
 
 export const submitVote = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -42,6 +43,21 @@ export const submitVote = async (req: Request, res: Response): Promise<void> => 
     const voterIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() 
       || req.socket.remoteAddress 
       || 'unknown';
+
+    const recentVote = await Vote.findOne({ voterIp })
+      .sort({ createdAt: -1 })
+      .limit(1);
+
+    if (recentVote) {
+      const timeSinceLastVote = (Date.now() - recentVote.createdAt.getTime()) / 1000;
+      if (timeSinceLastVote < VOTE_COOLDOWN_SECONDS) {
+        const waitTime = Math.ceil(VOTE_COOLDOWN_SECONDS - timeSinceLastVote);
+        res.status(429).json({ 
+          error: `Please wait ${waitTime} seconds before voting again` 
+        });
+        return;
+      }
+    }
 
     const existingVoteByIp = await Vote.findOne({
       pollId,

@@ -1,0 +1,1 @@
+export const VOTE_COOLDOWN_SECONDS = 30;
