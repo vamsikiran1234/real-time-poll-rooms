@@ -53,6 +53,16 @@ export const submitVote = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    const existingVoteByFingerprint = await Vote.findOne({
+      pollId,
+      fingerprintToken
+    });
+
+    if (existingVoteByFingerprint) {
+      res.status(403).json({ error: 'You have already voted in this poll' });
+      return;
+    }
+
     await Vote.create({
       pollId,
       optionId,
